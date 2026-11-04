@@ -1,0 +1,1149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LinkedIn Fresher Dashboard</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    /* ── LinkedIn Brand Overrides ── */
+    :root {
+      --li-blue: #0A66C2;
+      --li-blue-hover: #004182;
+      --li-bg: #F3F2EF;
+      --li-card: #FFFFFF;
+      --li-border: #E0DFDC;
+      --li-text: #191919;
+      --li-muted: #666666;
+      --li-green: #057642;
+      --li-orange: #E06B00;
+      --li-red: #CC1016;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: var(--li-bg);
+      color: var(--li-text);
+      font-size: 14px;
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+
+    /* ── Navbar ── */
+    .navbar {
+      background: #fff;
+      border-bottom: 1px solid var(--li-border);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      height: 52px;
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      gap: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+
+    .navbar-brand { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
+    .li-logo svg { width: 34px; height: 34px; }
+
+    .search-bar {
+      display: flex; align-items: center;
+      background: #EEF3F8; border-radius: 4px;
+      padding: 6px 10px; gap: 6px;
+      flex: 0 0 260px;
+    }
+    .search-bar input {
+      background: transparent; border: none; outline: none;
+      font-size: 14px; color: var(--li-text); width: 100%;
+    }
+    .search-bar input::placeholder { color: var(--li-muted); }
+
+    .nav-spacer { flex: 1; }
+
+    .nav-items { display: flex; align-items: stretch; height: 52px; }
+
+    .nav-item {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 0 12px; cursor: pointer; position: relative;
+      text-decoration: none; color: var(--li-muted);
+      font-size: 12px; gap: 2px; min-width: 72px;
+      border-bottom: 2px solid transparent;
+      transition: color 0.15s;
+    }
+    .nav-item:hover { color: var(--li-text); }
+    .nav-item.active { color: var(--li-text); border-bottom-color: var(--li-text); }
+    .nav-item svg { width: 24px; height: 24px; }
+
+    .nav-item .badge {
+      position: absolute; top: 6px; right: 8px;
+      background: var(--li-red); color: #fff;
+      border-radius: 50%; width: 16px; height: 16px;
+      font-size: 11px; display: flex; align-items: center; justify-content: center;
+      font-weight: 700;
+    }
+
+    .jobs-badge {
+      position: absolute; top: 4px; right: 2px;
+      background: #E06B00; color: #fff;
+      border-radius: 20px; padding: 1px 5px;
+      font-size: 10px; font-weight: 700; white-space: nowrap;
+    }
+
+    .profile-pill {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 0 12px; cursor: pointer; gap: 2px;
+      font-size: 12px; color: var(--li-muted);
+    }
+    .avatar-sm {
+      width: 24px; height: 24px; border-radius: 50%;
+      background: linear-gradient(135deg, #0A66C2, #004182);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-weight: 700; font-size: 11px;
+    }
+
+    /* ── Tooltip ── */
+    .tooltip-wrap { position: relative; }
+    .tooltip-box {
+      display: none; position: absolute; top: calc(100% + 8px); left: 50%;
+      transform: translateX(-50%);
+      background: #fff; border: 1px solid var(--li-border);
+      border-radius: 8px; padding: 12px 14px; width: 240px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.12); z-index: 200;
+      font-size: 13px; line-height: 1.5; color: var(--li-text);
+    }
+    .tooltip-box::before {
+      content: ''; position: absolute; top: -6px; left: 50%; transform: translateX(-50%);
+      width: 10px; height: 10px; background: #fff;
+      border-left: 1px solid var(--li-border); border-top: 1px solid var(--li-border);
+      transform: translateX(-50%) rotate(45deg);
+    }
+    .tooltip-wrap:hover .tooltip-box { display: block; }
+    .locked-jobs { opacity: 0.65; cursor: default; }
+
+    /* ── Layout ── */
+    .main-layout {
+      max-width: 1128px; margin: 24px auto; padding: 0 16px;
+      display: grid; grid-template-columns: 220px 1fr 300px; gap: 24px;
+    }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--li-card); border: 1px solid var(--li-border);
+      border-radius: 8px; overflow: hidden;
+    }
+
+    /* ── Left Sidebar ── */
+    .profile-card {
+      background: var(--li-card); border: 1px solid var(--li-border);
+      border-radius: 8px; overflow: hidden;
+    }
+    .profile-banner {
+      height: 54px;
+      background: linear-gradient(135deg, #0A66C2 0%, #004182 60%, #0A66C2 100%);
+    }
+    .profile-avatar-wrap { padding: 0 16px; margin-top: -24px; }
+    .profile-avatar {
+      width: 56px; height: 56px; border-radius: 50%;
+      border: 3px solid #fff;
+      background: linear-gradient(135deg, #0A66C2, #004182);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-weight: 800; font-size: 20px;
+    }
+    .profile-info { padding: 8px 16px 12px; }
+    .profile-name { font-weight: 700; font-size: 15px; color: var(--li-text); }
+    .profile-title { font-size: 12px; color: var(--li-muted); margin-top: 2px; line-height: 1.4; }
+
+    .divider { height: 1px; background: var(--li-border); margin: 0; }
+
+    .status-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: #EEF3F8; border-radius: 20px;
+      padding: 4px 10px; font-size: 12px; font-weight: 600; color: var(--li-blue);
+    }
+    .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--li-blue); }
+
+    .analytics-card { padding: 12px 16px; }
+    .analytics-label { font-size: 12px; color: var(--li-muted); margin-bottom: 4px; }
+    .analytics-value { font-size: 13px; font-weight: 700; color: var(--li-text); }
+
+    /* ── Progress Bar ── */
+    .prog-bar-wrap { background: #E0DFDC; border-radius: 100px; height: 6px; overflow: hidden; }
+    .prog-bar-fill {
+      height: 100%; border-radius: 100px;
+      background: linear-gradient(90deg, var(--li-blue), #0073b1);
+      transition: width 0.6s ease;
+    }
+
+    /* ── Feed ── */
+    .feed-card { background: var(--li-card); border: 1px solid var(--li-border); border-radius: 8px; }
+    .feed-section-title {
+      font-size: 16px; font-weight: 700; color: var(--li-text);
+      padding: 16px 20px 8px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .section-icon {
+      width: 20px; height: 20px; border-radius: 4px;
+      background: var(--li-blue); display: flex; align-items: center; justify-content: center;
+    }
+    .section-icon svg { width: 12px; height: 12px; color: #fff; }
+
+    /* ── Onboarding Banner ── */
+    .onboarding-banner {
+      background: linear-gradient(135deg, #EEF3F8 0%, #DDEEFF 100%);
+      border: 1px solid #C8E0F8; border-radius: 8px;
+      padding: 20px; display: flex; align-items: flex-start; gap: 16px;
+    }
+    .banner-icon {
+      width: 48px; height: 48px; border-radius: 12px;
+      background: var(--li-blue); flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    /* ── Checklist ── */
+    .checklist-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 20px; border-bottom: 1px solid var(--li-border);
+      cursor: pointer; transition: background 0.1s;
+    }
+    .checklist-item:last-child { border-bottom: none; }
+    .checklist-item:hover { background: #F8F8F8; }
+    .checklist-item.checked .item-label { text-decoration: line-through; color: var(--li-muted); }
+
+    .check-box {
+      width: 20px; height: 20px; border-radius: 50%;
+      border: 2px solid #aaa; display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; transition: all 0.2s; cursor: pointer;
+    }
+    .check-box.checked { background: var(--li-green); border-color: var(--li-green); }
+    .check-box.checked svg { display: block; }
+    .check-box svg { display: none; width: 12px; height: 12px; color: #fff; }
+
+    .item-tag {
+      margin-left: auto; font-size: 11px; font-weight: 600;
+      padding: 2px 8px; border-radius: 20px;
+    }
+    .tag-required { background: #FEF0E6; color: var(--li-orange); }
+    .tag-tools { background: #E8F5EE; color: var(--li-green); }
+
+    /* ── Specialization Cards ── */
+    .spec-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 12px; padding: 0 20px 16px;
+    }
+
+    .spec-card {
+      border: 1px solid var(--li-border); border-radius: 8px;
+      padding: 14px; cursor: pointer; transition: all 0.2s;
+      position: relative; overflow: hidden;
+    }
+    .spec-card:hover { border-color: var(--li-blue); box-shadow: 0 2px 10px rgba(10,102,194,0.15); }
+    .spec-card.expanded { border-color: var(--li-blue); background: #F8FBFF; }
+
+    .spec-card-icon {
+      width: 36px; height: 36px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; margin-bottom: 8px;
+    }
+    .spec-card-title { font-weight: 700; font-size: 13px; color: var(--li-text); }
+    .spec-card-sub { font-size: 12px; color: var(--li-muted); margin-top: 2px; }
+
+    .expand-arrow {
+      position: absolute; top: 10px; right: 10px;
+      color: var(--li-muted); transition: transform 0.2s;
+    }
+    .spec-card.expanded .expand-arrow { transform: rotate(180deg); color: var(--li-blue); }
+
+    /* ── Milestone Roadmap ── */
+    .roadmap-container {
+      grid-column: 1 / -1; padding: 0 20px 16px;
+      animation: slideDown 0.25s ease;
+    }
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .roadmap-header {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 16px; background: #EEF3F8;
+      border-radius: 8px 8px 0 0; border: 1px solid #C8E0F8;
+      border-bottom: none;
+    }
+    .roadmap-title { font-weight: 700; font-size: 14px; color: var(--li-blue); }
+
+    .milestone-steps {
+      display: flex; gap: 0;
+      border: 1px solid #C8E0F8; border-radius: 0 0 8px 8px; overflow: hidden;
+    }
+    .milestone-step {
+      flex: 1; padding: 14px 12px; position: relative;
+      background: var(--li-card); border-right: 1px solid #C8E0F8;
+    }
+    .milestone-step:last-child { border-right: none; }
+    .step-num {
+      width: 24px; height: 24px; border-radius: 50%; background: var(--li-blue);
+      color: #fff; font-weight: 800; font-size: 12px;
+      display: flex; align-items: center; justify-content: center; margin-bottom: 8px;
+    }
+    .step-title { font-weight: 700; font-size: 12px; color: var(--li-text); }
+    .step-desc { font-size: 12px; color: var(--li-muted); margin-top: 4px; line-height: 1.4; }
+    .step-duration {
+      display: inline-block; margin-top: 6px; font-size: 11px; font-weight: 600;
+      color: var(--li-blue); background: #EEF3F8; padding: 2px 6px; border-radius: 20px;
+    }
+
+    /* ── Right Sidebar ── */
+    .sidebar-card { background: var(--li-card); border: 1px solid var(--li-border); border-radius: 8px; overflow: hidden; }
+    .sidebar-card-header {
+      padding: 14px 16px; border-bottom: 1px solid var(--li-border);
+      font-weight: 700; font-size: 15px; display: flex; align-items: center; gap: 8px;
+    }
+
+    .coding-sprint-card {
+      padding: 14px 16px;
+    }
+    .sprint-label {
+      font-size: 11px; font-weight: 700; color: var(--li-muted);
+      text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px;
+    }
+    .puzzle-box {
+      background: linear-gradient(135deg, #0A66C2 0%, #004182 100%);
+      border-radius: 8px; padding: 14px; color: #fff; margin-bottom: 12px;
+    }
+    .puzzle-title { font-weight: 700; font-size: 14px; }
+    .puzzle-desc { font-size: 12px; opacity: 0.85; margin-top: 4px; line-height: 1.4; }
+    .puzzle-meta { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+    .puzzle-tag {
+      background: rgba(255,255,255,0.2); border-radius: 20px;
+      padding: 2px 8px; font-size: 11px; font-weight: 600;
+    }
+    .puzzle-time { font-size: 11px; opacity: 0.75; }
+
+    .btn-primary {
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      background: var(--li-blue); color: #fff; border: none;
+      border-radius: 20px; padding: 8px 20px;
+      font-weight: 700; font-size: 14px; cursor: pointer;
+      transition: background 0.15s; width: 100%;
+    }
+    .btn-primary:hover { background: var(--li-blue-hover); }
+
+    .btn-outline {
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      background: transparent; color: var(--li-blue); border: 1.5px solid var(--li-blue);
+      border-radius: 20px; padding: 6px 16px;
+      font-weight: 700; font-size: 13px; cursor: pointer;
+      transition: all 0.15s; width: 100%;
+    }
+    .btn-outline:hover { background: #EEF3F8; }
+
+    /* ── Mentor Cards ── */
+    .mentor-card {
+      display: flex; gap: 10px; padding: 12px 16px;
+      border-bottom: 1px solid var(--li-border); align-items: flex-start;
+    }
+    .mentor-card:last-child { border-bottom: none; }
+    .mentor-avatar {
+      width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 15px; color: #fff;
+    }
+    .mentor-name { font-weight: 700; font-size: 13px; }
+    .mentor-title { font-size: 12px; color: var(--li-muted); margin-top: 1px; }
+    .mentor-company { font-size: 12px; color: var(--li-blue); margin-top: 2px; }
+
+    /* ── Open to Work Banner ── */
+    .otw-banner {
+      border: 1px solid var(--li-green); border-radius: 20px;
+      padding: 2px 10px; display: inline-flex; align-items: center; gap: 5px;
+      font-size: 12px; font-weight: 600; color: var(--li-green);
+      background: #F0FAF5;
+    }
+
+    /* ── Sidebar Quick Links ── */
+    .quick-link {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 16px; cursor: pointer; border-radius: 4px;
+      font-size: 13px; color: var(--li-muted); transition: all 0.1s;
+    }
+    .quick-link:hover { background: #F3F2EF; color: var(--li-text); }
+    .quick-link svg { width: 16px; height: 16px; color: var(--li-muted); }
+
+    /* ── Notification modal ── */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.4); z-index: 300;
+      align-items: center; justify-content: center;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal-box {
+      background: #fff; border-radius: 12px; padding: 28px 32px;
+      max-width: 400px; width: 90%; text-align: center;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+      animation: popIn 0.2s ease;
+    }
+    @keyframes popIn {
+      from { opacity: 0; transform: scale(0.9); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    .modal-title { font-size: 20px; font-weight: 800; color: var(--li-text); margin-bottom: 10px; }
+    .modal-desc { font-size: 14px; color: var(--li-muted); line-height: 1.6; }
+    .modal-close {
+      margin-top: 20px; background: var(--li-blue); color: #fff;
+      border: none; border-radius: 20px; padding: 10px 28px;
+      font-weight: 700; font-size: 14px; cursor: pointer;
+    }
+
+    /* ── Solve Challenge Modal ── */
+    .challenge-modal {
+      text-align: left;
+    }
+    .code-block {
+      background: #1E1E2E; color: #CDD6F4; border-radius: 8px;
+      padding: 14px; font-family: 'Courier New', monospace; font-size: 13px;
+      line-height: 1.6; margin: 12px 0; overflow-x: auto;
+    }
+    .code-kw { color: #89B4FA; }
+    .code-fn { color: #89DCEB; }
+    .code-str { color: #A6E3A1; }
+    .code-num { color: #FAB387; }
+    .code-cmt { color: #6C7086; }
+
+    /* ── Responsive adjustments ── */
+    @media (max-width: 1024px) {
+      .main-layout { grid-template-columns: 220px 1fr; }
+      .right-sidebar { display: none; }
+    }
+    @media (max-width: 720px) {
+      .main-layout { grid-template-columns: 1fr; }
+      .left-sidebar { display: none; }
+      .spec-grid { grid-template-columns: 1fr; }
+      .milestone-steps { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════ NAVBAR ══════════════ -->
+<nav class="navbar">
+  <div class="navbar-brand">
+    <!-- LinkedIn Logo -->
+    <div class="li-logo">
+      <svg viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="34" height="34" rx="4" fill="#0A66C2"/>
+        <path d="M7 13.5H11.5V27H7V13.5ZM9.25 11.5C7.87 11.5 7 10.6 7 9.5C7 8.4 7.9 7.5 9.25 7.5C10.6 7.5 11.5 8.4 11.5 9.5C11.5 10.6 10.6 11.5 9.25 11.5Z" fill="white"/>
+        <path d="M14 13.5H18.2V15.4H18.3C18.9 14.3 20.3 13.1 22.5 13.1C27 13.1 27.8 16 27.8 19.8V27H23.3V20.7C23.3 19 23.3 16.8 21 16.8C18.6 16.8 18.3 18.6 18.3 20.6V27H13.8V13.5H14Z" fill="white"/>
+      </svg>
+    </div>
+
+    <!-- Search Bar -->
+    <div class="search-bar">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <input type="text" placeholder="Search skills, roadmaps, mentors..." id="searchInput" />
+    </div>
+  </div>
+
+  <div class="nav-spacer"></div>
+
+  <!-- Nav Items -->
+  <div class="nav-items">
+    <!-- Home -->
+    <div class="nav-item active" onclick="setActiveNav(this)">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 9.37L12.43 1a.76.76 0 00-.86 0L1 9.37a.5.5 0 00.28.91h2.08v11.14A1.59 1.59 0 004.93 23h4.7a.5.5 0 00.5-.5V17a.5.5 0 01.5-.5h2.74a.5.5 0 01.5.5v5.5a.5.5 0 00.5.5h4.7a1.59 1.59 0 001.57-1.58V10.28h2.08a.5.5 0 00.28-.91z"/></svg>
+      Home
+    </div>
+
+    <!-- Learning Path -->
+    <div class="nav-item active" onclick="setActiveNav(this)">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 3a1 1 0 00-.48-.86L12.52.08a1 1 0 00-1 0L1.48 2.14A1 1 0 001 3v12.26a1 1 0 00.52.88l10 5.65a1 1 0 001 0l10-5.65a1 1 0 00.52-.88z"/></svg>
+      Learning Path
+    </div>
+
+    <!-- Network -->
+    <div class="nav-item" onclick="setActiveNav(this)">
+      <div style="position:relative">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 11a5 5 0 10-5-5 5 5 0 005 5zm-6.09 2h-.82A9.14 9.14 0 000 22.09c0 1.06.84 1.91 2 1.91h8.44A5.5 5.5 0 0110 22.5a5.44 5.44 0 011-3.14A6 6 0 019.91 13zM17.5 13A5.5 5.5 0 1023 18.5 5.5 5.5 0 0017.5 13zm0 2a1.5 1.5 0 11-1.5 1.5A1.5 1.5 0 0117.5 15zm0 7a3.73 3.73 0 01-3-1.5c0-1 2-1.55 3-1.55s3 .55 3 1.55a3.73 3.73 0 01-3 1.5z"/></svg>
+        <div class="badge">3</div>
+      </div>
+      Network
+    </div>
+
+    <!-- Messaging -->
+    <div class="nav-item" onclick="setActiveNav(this)">
+      <div style="position:relative">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 4H8a7 7 0 000 14h4l5.4 2.7A1 1 0 0019 20v-3.26A7 7 0 0016 4z"/></svg>
+        <div class="badge">5</div>
+      </div>
+      Messaging
+    </div>
+
+    <!-- Notifications -->
+    <div class="nav-item" onclick="setActiveNav(this)">
+      <div style="position:relative">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M22 19h-6.5a3.5 3.5 0 01-7 0H2v-1.5l2-2v-6a8 8 0 0116 0v6l2 2V19z"/></svg>
+        <div class="badge">2</div>
+      </div>
+      Notifications
+    </div>
+
+    <!-- Jobs (LOCKED) -->
+    <div class="tooltip-wrap">
+      <div class="nav-item locked-jobs" style="position:relative; min-width:80px;">
+        <div style="position:relative; display:inline-block;">
+          <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24"><path d="M17 6V5a3 3 0 00-3-3h-4a3 3 0 00-3 3v1H2v4a3 3 0 003 3h14a3 3 0 003-3V6h-5zm-8-1a1 1 0 011-1h4a1 1 0 011 1v1H9V5z"/><path d="M15 13.5V12H9v1.5A4.5 4.5 0 004.5 18v3h15v-3a4.5 4.5 0 00-4.5-4.5z"/></svg>
+          <!-- Lock overlay -->
+          <div style="position:absolute;bottom:-2px;right:-6px;background:#E06B00;border-radius:50%;width:14px;height:14px;display:flex;align-items:center;justify-content:center;">
+            <svg width="8" height="8" viewBox="0 0 24 24" fill="white"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+          </div>
+        </div>
+        <div class="jobs-badge">Year 3</div>
+        Jobs
+      </div>
+      <div class="tooltip-box">
+        🔒 <strong>Jobs are locked!</strong><br/><br/>
+        Build your core skills first! Jobs unlock after completing <strong>Year 1 &amp; 2 milestones</strong>.<br/><br/>
+        <span style="color:#0A66C2;font-weight:600;">Focus on your Learning Path →</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Profile -->
+  <div class="profile-pill">
+    <div class="avatar-sm">A</div>
+    <span>Me ▾</span>
+  </div>
+</nav>
+
+<!-- ══════════════ MAIN LAYOUT ══════════════ -->
+<div class="main-layout">
+
+  <!-- ── LEFT SIDEBAR ── -->
+  <aside class="left-sidebar" style="display:flex;flex-direction:column;gap:12px;">
+
+    <!-- Profile Card -->
+    <div class="profile-card">
+      <div class="profile-banner"></div>
+      <div class="profile-avatar-wrap">
+        <div class="profile-avatar">A</div>
+      </div>
+      <div class="profile-info">
+        <div class="profile-name">Akshat Sharma</div>
+        <div class="profile-title">1st Year B.Tech CSE Student<br/>
+          <span style="color:#0A66C2;">IIT Roorkee • Batch 2029</span>
+        </div>
+        <div style="margin-top:10px;">
+          <div class="otw-banner">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
+            Open to Mentorship
+          </div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Status Badge -->
+      <div style="padding:12px 16px;">
+        <div style="font-size:11px;color:#666;text-transform:uppercase;font-weight:700;letter-spacing:0.5px;margin-bottom:8px;">Current Focus</div>
+        <div class="status-badge">
+          <div class="status-dot"></div>
+          Foundation Track
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Analytics -->
+      <div class="analytics-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+          <div class="analytics-label">Core Skills Progress</div>
+          <div style="font-size:13px;font-weight:800;color:#0A66C2;" id="progressPct">40%</div>
+        </div>
+        <div class="prog-bar-wrap" style="margin-bottom:12px;">
+          <div class="prog-bar-fill" id="mainProgBar" style="width:40%;"></div>
+        </div>
+        <div class="analytics-label">Roadmap Level</div>
+        <div class="analytics-value">Year 1 — Semester 1</div>
+        <div style="font-size:12px;color:#666;margin-top:4px;">2 of 5 skills completed</div>
+      </div>
+    </div>
+
+    <!-- Quick Links -->
+    <div class="card" style="padding:8px 0;">
+      <div style="padding:4px 16px 8px;font-size:12px;font-weight:700;color:#666;text-transform:uppercase;letter-spacing:0.5px;">Quick Access</div>
+      <div class="quick-link">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+        My Learning Path
+      </div>
+      <div class="quick-link">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Academic Calendar
+      </div>
+      <div class="quick-link">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        Study Groups
+      </div>
+      <div class="quick-link">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        Achievements
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- ── MAIN FEED ── -->
+  <main style="display:flex;flex-direction:column;gap:16px;">
+
+    <!-- Onboarding Banner -->
+    <div class="onboarding-banner">
+      <div class="banner-icon">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="white"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+      </div>
+      <div>
+        <div style="font-weight:800;font-size:16px;color:#0A66C2;margin-bottom:4px;">
+          Welcome back, Akshat! 👋 You're a Fresher — own it.
+        </div>
+        <div style="font-size:13px;color:#444;line-height:1.6;">
+          Explore industries &amp; build <strong>core coding logic</strong> before applying for jobs.
+          First, complete your <strong>Year 1 Foundation Stack</strong> to unlock internship &amp; project opportunities.
+        </div>
+        <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;">
+          <button class="btn-primary" style="width:auto;padding:8px 18px;font-size:13px;" onclick="document.getElementById('coreStack').scrollIntoView({behavior:'smooth'})">
+            Start Foundation Track →
+          </button>
+          <button class="btn-outline" style="width:auto;padding:7px 16px;font-size:13px;" onclick="document.getElementById('specSection').scrollIntoView({behavior:'smooth'})">
+            Explore Streams
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SECTION 1: Core Stack ── -->
+    <div class="feed-card" id="coreStack">
+      <div class="feed-section-title">
+        <div class="section-icon">
+          <svg viewBox="0 0 24 24" fill="white" width="12" height="12"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+        </div>
+        Mandatory 1st-Year Core Stack
+        <span style="margin-left:auto;font-size:12px;font-weight:600;color:#666;">
+          <span id="checkedCount">2</span>/5 Done
+        </span>
+      </div>
+
+      <!-- Progress Bar -->
+      <div style="padding:0 20px 14px;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+          <span style="font-size:12px;color:#666;">Year 1 Foundation Progress</span>
+          <span style="font-size:12px;font-weight:700;color:#0A66C2;" id="checklistPct">40%</span>
+        </div>
+        <div class="prog-bar-wrap">
+          <div class="prog-bar-fill" id="checklistBar" style="width:40%;"></div>
+        </div>
+      </div>
+
+      <!-- Checklist Items -->
+      <div class="divider"></div>
+      <div id="checklistContainer">
+        <div class="checklist-item checked" onclick="toggleCheck(this)" data-id="0">
+          <div class="check-box checked">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <div>
+            <div class="item-label" style="font-weight:600;font-size:13px;">C++ / Python Basics</div>
+            <div style="font-size:12px;color:#666;">Variables, loops, functions, OOP fundamentals</div>
+          </div>
+          <div class="item-tag tag-required">Required</div>
+        </div>
+        <div class="checklist-item checked" onclick="toggleCheck(this)" data-id="1">
+          <div class="check-box checked">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <div>
+            <div class="item-label" style="font-weight:600;font-size:13px;">Problem Solving & Logic</div>
+            <div style="font-size:12px;color:#666;">Patterns, recursion, computational thinking</div>
+          </div>
+          <div class="item-tag tag-required">Required</div>
+        </div>
+        <div class="checklist-item" onclick="toggleCheck(this)" data-id="2">
+          <div class="check-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <div>
+            <div class="item-label" style="font-weight:600;font-size:13px;">Data Structures Fundamentals</div>
+            <div style="font-size:12px;color:#666;">Arrays, linked lists, stacks, queues, trees</div>
+          </div>
+          <div class="item-tag tag-required">Required</div>
+        </div>
+        <div class="checklist-item" onclick="toggleCheck(this)" data-id="3">
+          <div class="check-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <div>
+            <div class="item-label" style="font-weight:600;font-size:13px;">Git Version Control</div>
+            <div style="font-size:12px;color:#666;">Commits, branches, pull requests, collaboration</div>
+          </div>
+          <div class="item-tag tag-tools">Tools</div>
+        </div>
+        <div class="checklist-item" onclick="toggleCheck(this)" data-id="4">
+          <div class="check-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <div>
+            <div class="item-label" style="font-weight:600;font-size:13px;">Linux & Command Line Basics</div>
+            <div style="font-size:12px;color:#666;">Terminal, file system, bash scripting, SSH</div>
+          </div>
+          <div class="item-tag tag-tools">Tools</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SECTION 2: Specialization Streams ── -->
+    <div class="feed-card" id="specSection">
+      <div class="feed-section-title">
+        <div class="section-icon">
+          <svg viewBox="0 0 24 24" fill="white" width="12" height="12"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+        </div>
+        Explore Specialization Streams
+      </div>
+      <div style="padding:0 20px 10px;font-size:13px;color:#666;">
+        Click any track to see the 4-step milestone roadmap. You can explore all streams before choosing your specialization in Year 2.
+      </div>
+
+      <div class="spec-grid" id="specGrid">
+
+        <!-- AI/ML Card -->
+        <div class="spec-card" onclick="toggleSpec(this,'ai')" data-track="ai">
+          <div class="expand-arrow">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+          <div class="spec-card-icon" style="background:#EDE9FE;">🤖</div>
+          <div class="spec-card-title">AI & Machine Learning Track</div>
+          <div class="spec-card-sub">Build intelligent systems, neural networks & ML models</div>
+          <div style="display:flex;align-items:center;gap:6px;margin-top:10px;flex-wrap:wrap;">
+            <span style="font-size:11px;background:#EDE9FE;color:#7C3AED;border-radius:20px;padding:2px 7px;font-weight:600;">Python</span>
+            <span style="font-size:11px;background:#EDE9FE;color:#7C3AED;border-radius:20px;padding:2px 7px;font-weight:600;">TensorFlow</span>
+            <span style="font-size:11px;background:#EDE9FE;color:#7C3AED;border-radius:20px;padding:2px 7px;font-weight:600;">PyTorch</span>
+          </div>
+        </div>
+
+        <!-- Full-Stack Card -->
+        <div class="spec-card" onclick="toggleSpec(this,'web')" data-track="web">
+          <div class="expand-arrow">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+          <div class="spec-card-icon" style="background:#DCFCE7;">🌐</div>
+          <div class="spec-card-title">Full-Stack Web Development</div>
+          <div class="spec-card-sub">Build complete web apps from frontend to backend</div>
+          <div style="display:flex;align-items:center;gap:6px;margin-top:10px;flex-wrap:wrap;">
+            <span style="font-size:11px;background:#DCFCE7;color:#15803D;border-radius:20px;padding:2px 7px;font-weight:600;">React</span>
+            <span style="font-size:11px;background:#DCFCE7;color:#15803D;border-radius:20px;padding:2px 7px;font-weight:600;">Node.js</span>
+            <span style="font-size:11px;background:#DCFCE7;color:#15803D;border-radius:20px;padding:2px 7px;font-weight:600;">MongoDB</span>
+          </div>
+        </div>
+
+        <!-- Data Science Card -->
+        <div class="spec-card" onclick="toggleSpec(this,'ds')" data-track="ds">
+          <div class="expand-arrow">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+          <div class="spec-card-icon" style="background:#FEF3C7;">📊</div>
+          <div class="spec-card-title">Data Science & Analytics</div>
+          <div class="spec-card-sub">Extract insights from data, statistics & visualization</div>
+          <div style="display:flex;align-items:center;gap:6px;margin-top:10px;flex-wrap:wrap;">
+            <span style="font-size:11px;background:#FEF3C7;color:#92400E;border-radius:20px;padding:2px 7px;font-weight:600;">Python</span>
+            <span style="font-size:11px;background:#FEF3C7;color:#92400E;border-radius:20px;padding:2px 7px;font-weight:600;">SQL</span>
+            <span style="font-size:11px;background:#FEF3C7;color:#92400E;border-radius:20px;padding:2px 7px;font-weight:600;">Tableau</span>
+          </div>
+        </div>
+
+        <!-- Cloud/DevOps Card -->
+        <div class="spec-card" onclick="toggleSpec(this,'cloud')" data-track="cloud">
+          <div class="expand-arrow">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+          <div class="spec-card-icon" style="background:#DBEAFE;">☁️</div>
+          <div class="spec-card-title">Cloud Computing & DevOps</div>
+          <div class="spec-card-sub">Deploy, scale & automate infrastructure in the cloud</div>
+          <div style="display:flex;align-items:center;gap:6px;margin-top:10px;flex-wrap:wrap;">
+            <span style="font-size:11px;background:#DBEAFE;color:#1D4ED8;border-radius:20px;padding:2px 7px;font-weight:600;">AWS</span>
+            <span style="font-size:11px;background:#DBEAFE;color:#1D4ED8;border-radius:20px;padding:2px 7px;font-weight:600;">Docker</span>
+            <span style="font-size:11px;background:#DBEAFE;color:#1D4ED8;border-radius:20px;padding:2px 7px;font-weight:600;">K8s</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Roadmap Container (injected here) -->
+      <div id="roadmapContainer" style="padding:0 20px;"></div>
+
+    </div>
+
+  </main>
+
+  <!-- ── RIGHT SIDEBAR ── -->
+  <aside class="right-sidebar" style="display:flex;flex-direction:column;gap:14px;">
+
+    <!-- Daily Coding Sprint -->
+    <div class="sidebar-card">
+      <div class="sidebar-card-header">
+        <span style="font-size:18px;">⚡</span>
+        Daily 15-Min Sprint
+      </div>
+      <div class="coding-sprint-card">
+        <div class="sprint-label">Today's Challenge • Day 42</div>
+        <div class="puzzle-box">
+          <div class="puzzle-title">Two Sum</div>
+          <div class="puzzle-desc">Given an array of integers, return indices of the two numbers such that they add up to a target.</div>
+          <div class="puzzle-meta">
+            <span class="puzzle-tag">🟢 Easy</span>
+            <span class="puzzle-tag">Arrays</span>
+            <span class="puzzle-time">~15 min</span>
+          </div>
+        </div>
+        <button class="btn-primary" onclick="openChallengeModal()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Solve Challenge
+        </button>
+        <div style="margin-top:10px;text-align:center;">
+          <span style="font-size:12px;color:#666;">🔥 You're on a <strong>7-day streak!</strong></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Alumni & Senior Mentors -->
+    <div class="sidebar-card">
+      <div class="sidebar-card-header">
+        <span style="font-size:18px;">🎓</span>
+        Alumni & Senior Mentors
+      </div>
+
+      <div class="mentor-card">
+        <div class="mentor-avatar" style="background:linear-gradient(135deg,#0A66C2,#004182);">R</div>
+        <div style="flex:1;">
+          <div class="mentor-name">Riya Desai</div>
+          <div class="mentor-title">3rd Year CSE • AI/ML Lead</div>
+          <div class="mentor-company">SDE Intern @ Google</div>
+          <button class="btn-outline" style="margin-top:8px;padding:5px 12px;font-size:12px;" onclick="showConnectToast('Riya Desai')">
+            + Connect for Guidance
+          </button>
+        </div>
+      </div>
+
+      <div class="mentor-card">
+        <div class="mentor-avatar" style="background:linear-gradient(135deg,#059669,#047857);">K</div>
+        <div style="flex:1;">
+          <div class="mentor-name">Karan Mehta</div>
+          <div class="mentor-title">4th Year CSE • Full-Stack</div>
+          <div class="mentor-company">Engineer @ Flipkart</div>
+          <button class="btn-outline" style="margin-top:8px;padding:5px 12px;font-size:12px;" onclick="showConnectToast('Karan Mehta')">
+            + Connect for Guidance
+          </button>
+        </div>
+      </div>
+
+      <div class="mentor-card">
+        <div class="mentor-avatar" style="background:linear-gradient(135deg,#9333EA,#7C3AED);">S</div>
+        <div style="flex:1;">
+          <div class="mentor-name">Sneha Pillai</div>
+          <div class="mentor-title">Alumni 2024 • Data Science</div>
+          <div class="mentor-company">Data Scientist @ Microsoft</div>
+          <button class="btn-outline" style="margin-top:8px;padding:5px 12px;font-size:12px;" onclick="showConnectToast('Sneha Pillai')">
+            + Connect for Guidance
+          </button>
+        </div>
+      </div>
+
+      <div style="padding:12px 16px;border-top:1px solid #E0DFDC;">
+        <button class="btn-outline" style="font-size:13px;">View All Mentors →</button>
+      </div>
+    </div>
+
+    <!-- Year Roadmap Widget -->
+    <div class="sidebar-card">
+      <div class="sidebar-card-header">
+        <span style="font-size:18px;">🗺️</span>
+        Your 4-Year Journey
+      </div>
+      <div style="padding:14px 16px;">
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="display:flex;align-items:flex-start;gap:10px;">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
+              <div style="width:28px;height:28px;border-radius:50%;background:#0A66C2;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:12px;flex-shrink:0;">1</div>
+              <div style="width:2px;flex:1;min-height:28px;background:#C8E0F8;margin-top:4px;"></div>
+            </div>
+            <div>
+              <div style="font-weight:700;font-size:13px;color:#0A66C2;">Year 1 • You are here ←</div>
+              <div style="font-size:12px;color:#666;margin-top:2px;">Foundation: DSA, CS Basics, Git</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:10px;opacity:0.6;">
+            <div style="display:flex;flex-direction:column;align-items:center;">
+              <div style="width:28px;height:28px;border-radius:50%;background:#E0DFDC;display:flex;align-items:center;justify-content:center;color:#666;font-weight:800;font-size:12px;flex-shrink:0;">2</div>
+              <div style="width:2px;flex:1;min-height:28px;background:#E0DFDC;margin-top:4px;"></div>
+            </div>
+            <div>
+              <div style="font-weight:600;font-size:13px;">Year 2 • Specialization</div>
+              <div style="font-size:12px;color:#666;margin-top:2px;">Pick your track, build projects</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:10px;opacity:0.4;">
+            <div style="display:flex;flex-direction:column;align-items:center;">
+              <div style="width:28px;height:28px;border-radius:50%;background:#E0DFDC;display:flex;align-items:center;justify-content:center;color:#666;font-weight:800;font-size:12px;flex-shrink:0;">3</div>
+              <div style="width:2px;flex:1;min-height:28px;background:#E0DFDC;margin-top:4px;"></div>
+            </div>
+            <div>
+              <div style="font-weight:600;font-size:13px;">Year 3 • Internships 🔓</div>
+              <div style="font-size:12px;color:#666;margin-top:2px;">Industry experience & placements</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:10px;opacity:0.3;">
+            <div style="display:flex;flex-direction:column;align-items:center;">
+              <div style="width:28px;height:28px;border-radius:50%;background:#E0DFDC;display:flex;align-items:center;justify-content:center;color:#666;font-weight:800;font-size:12px;flex-shrink:0;">4</div>
+            </div>
+            <div>
+              <div style="font-weight:600;font-size:13px;">Year 4 • Placements 🎯</div>
+              <div style="font-size:12px;color:#666;margin-top:2px;">Full-time offers & research</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </aside>
+</div>
+
+<!-- ══════════════ JOBS LOCKED MODAL ══════════════ -->
+<div class="modal-overlay" id="jobsModal">
+  <div class="modal-box">
+    <div style="font-size:40px;margin-bottom:12px;">🔒</div>
+    <div class="modal-title">Jobs Unlock in Year 3!</div>
+    <div class="modal-desc">
+      Build your core skills first! Jobs unlock after completing <strong>Year 1 &amp; 2 milestones</strong>.<br/><br/>
+      Focus on your <strong>Foundation Track</strong> and explore specialization streams. Internships become available from Year 2 onwards!
+    </div>
+    <button class="modal-close" onclick="closeModal('jobsModal')">Got it, let's grind! 💪</button>
+  </div>
+</div>
+
+<!-- ══════════════ CHALLENGE MODAL ══════════════ -->
+<div class="modal-overlay" id="challengeModal">
+  <div class="modal-box challenge-modal" style="max-width:520px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+      <div>
+        <div style="font-size:11px;font-weight:700;color:#666;text-transform:uppercase;letter-spacing:0.5px;">Day 42 Challenge</div>
+        <div style="font-size:18px;font-weight:800;color:#191919;margin-top:2px;">Two Sum ⚡</div>
+      </div>
+      <div style="display:flex;gap:6px;">
+        <span style="font-size:12px;background:#DCFCE7;color:#15803D;border-radius:20px;padding:3px 10px;font-weight:700;">Easy</span>
+      </div>
+    </div>
+    <div style="font-size:13px;color:#444;line-height:1.6;margin-bottom:12px;">
+      Given an array of integers <code style="background:#F3F2EF;padding:1px 4px;border-radius:3px;">nums</code> and an integer <code style="background:#F3F2EF;padding:1px 4px;border-radius:3px;">target</code>, return <em>indices of the two numbers</em> such that they add up to <code style="background:#F3F2EF;padding:1px 4px;border-radius:3px;">target</code>.
+    </div>
+    <div class="code-block">
+<span class="code-cmt"># Input: nums = [2,7,11,15], target = 9</span>
+<span class="code-cmt"># Output: [0, 1]</span>
+
+<span class="code-kw">def</span> <span class="code-fn">two_sum</span>(nums, target):
+    seen = {}
+    <span class="code-kw">for</span> i, num <span class="code-kw">in</span> <span class="code-fn">enumerate</span>(nums):
+        complement = target - num
+        <span class="code-kw">if</span> complement <span class="code-kw">in</span> seen:
+            <span class="code-kw">return</span> [seen[complement], i]
+        seen[num] = i
+    <span class="code-kw">return</span> []</div>
+    <div style="display:flex;gap:10px;margin-top:4px;">
+      <button class="btn-primary" style="flex:1;" onclick="closeModal('challengeModal');showToast('✅ Solution submitted! +50 XP earned!')">Submit Solution</button>
+      <button class="btn-outline" style="flex:1;" onclick="closeModal('challengeModal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ TOAST ══════════════ -->
+<div id="toast" style="
+  position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:#191919;color:#fff;padding:12px 20px;border-radius:8px;
+  font-size:14px;font-weight:600;z-index:500;opacity:0;transition:all 0.3s;
+  white-space:nowrap;pointer-events:none;box-shadow:0 4px 20px rgba(0,0,0,0.3);
+  max-width:90vw;text-align:center;
+"></div>
+
+<script>
+  /* ── Roadmap Data ── */
+  const roadmaps = {
+    ai: {
+      title: "🤖 AI & Machine Learning Track — 4-Step Milestone Roadmap",
+      color: "#7C3AED",
+      steps: [
+        { title: "Math & Stats Foundation", desc: "Linear algebra, probability, calculus, statistics for ML", dur: "2 months" },
+        { title: "Python for ML", desc: "NumPy, Pandas, Matplotlib, Scikit-learn library mastery", dur: "1.5 months" },
+        { title: "Classical ML Algorithms", desc: "Regression, classification, clustering, model evaluation", dur: "2 months" },
+        { title: "Deep Learning & Projects", desc: "Neural nets, CNNs, RNNs, Transformers, real-world projects", dur: "3 months" }
+      ]
+    },
+    web: {
+      title: "🌐 Full-Stack Web Development Track — 4-Step Milestone Roadmap",
+      color: "#15803D",
+      steps: [
+        { title: "HTML, CSS & JavaScript", desc: "DOM manipulation, responsive design, ES6+ modern JS", dur: "1.5 months" },
+        { title: "Frontend Frameworks", desc: "React.js, component lifecycle, state management, Next.js", dur: "2 months" },
+        { title: "Backend & APIs", desc: "Node.js, Express, REST APIs, authentication, SQL/NoSQL", dur: "2 months" },
+        { title: "DevOps & Deployment", desc: "Docker, CI/CD, cloud deployment, full-stack projects", dur: "1.5 months" }
+      ]
+    },
+    ds: {
+      title: "📊 Data Science & Analytics Track — 4-Step Milestone Roadmap",
+      color: "#92400E",
+      steps: [
+        { title: "Statistics & Excel", desc: "Descriptive stats, hypothesis testing, data cleaning basics", dur: "1.5 months" },
+        { title: "Python for Data Analysis", desc: "Pandas, NumPy, Seaborn, Matplotlib for EDA", dur: "2 months" },
+        { title: "SQL & Database Skills", desc: "Joins, aggregations, window functions, database design", dur: "1.5 months" },
+        { title: "ML & Dashboards", desc: "Scikit-learn, Tableau, Power BI, capstone data projects", dur: "2 months" }
+      ]
+    },
+    cloud: {
+      title: "☁️ Cloud Computing & DevOps Track — 4-Step Milestone Roadmap",
+      color: "#1D4ED8",
+      steps: [
+        { title: "Linux & Networking", desc: "Shell scripting, networking protocols, server management", dur: "1.5 months" },
+        { title: "Cloud Fundamentals (AWS)", desc: "EC2, S3, IAM, VPC, cloud architecture patterns", dur: "2 months" },
+        { title: "Containers & Orchestration", desc: "Docker, Kubernetes, microservices architecture", dur: "2 months" },
+        { title: "CI/CD & Infrastructure", desc: "Jenkins, Terraform, Ansible, GitOps, monitoring", dur: "1.5 months" }
+      ]
+    }
+  };
+
+  let activeTrack = null;
+
+  function toggleSpec(card, track) {
+    const container = document.getElementById('roadmapContainer');
+    const allCards = document.querySelectorAll('.spec-card');
+
+    if (activeTrack === track) {
+      // Close
+      card.classList.remove('expanded');
+      container.innerHTML = '';
+      activeTrack = null;
+      return;
+    }
+
+    // Deactivate all
+    allCards.forEach(c => c.classList.remove('expanded'));
+    card.classList.add('expanded');
+    activeTrack = track;
+
+    const data = roadmaps[track];
+    const stepsHtml = data.steps.map((s, i) => `
+      <div class="milestone-step">
+        <div class="step-num">${i+1}</div>
+        <div class="step-title">${s.title}</div>
+        <div class="step-desc">${s.desc}</div>
+        <div class="step-duration">⏱ ${s.dur}</div>
+      </div>
+    `).join('');
+
+    container.innerHTML = `
+      <div class="roadmap-container" style="padding:0 0 16px;">
+        <div class="roadmap-header">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="${data.color}"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+          <div class="roadmap-title">${data.title}</div>
+        </div>
+        <div class="milestone-steps">${stepsHtml}</div>
+        <div style="margin-top:12px;text-align:center;">
+          <button class="btn-primary" style="width:auto;padding:9px 24px;" onclick="showToast('📌 ${data.title.split('—')[0].trim()} added to your roadmap!')">
+            Add to My Roadmap
+          </button>
+        </div>
+      </div>
+    `;
+    container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  /* ── Checklist ── */
+  const totalItems = 5;
+  let checkedItems = 2;
+
+  function toggleCheck(item) {
+    const box = item.querySelector('.check-box');
+    const isChecked = item.classList.contains('checked');
+
+    if (isChecked) {
+      item.classList.remove('checked');
+      box.classList.remove('checked');
+      checkedItems--;
+    } else {
+      item.classList.add('checked');
+      box.classList.add('checked');
+      checkedItems++;
+      showToast('✅ Skill marked complete! Keep going! 🚀');
+    }
+
+    updateProgress();
+  }
+
+  function updateProgress() {
+    const pct = Math.round((checkedItems / totalItems) * 100);
+    document.getElementById('checkedCount').textContent = checkedItems;
+    document.getElementById('checklistPct').textContent = pct + '%';
+    document.getElementById('checklistBar').style.width = pct + '%';
+    document.getElementById('progressPct').textContent = pct + '%';
+    document.getElementById('mainProgBar').style.width = pct + '%';
+
+    if (checkedItems === totalItems) {
+      setTimeout(() => {
+        showToast('🎉 Foundation Track Complete! Year 2 unlocked!');
+      }, 400);
+    }
+  }
+
+  /* ── Nav Active State ── */
+  function setActiveNav(el) {
+    document.querySelectorAll('.nav-item:not(.locked-jobs)').forEach(n => n.classList.remove('active'));
+    el.classList.add('active');
+  }
+
+  /* ── Modals ── */
+  function openChallengeModal() {
+    document.getElementById('challengeModal').classList.add('show');
+  }
+  function closeModal(id) {
+    document.getElementById(id).classList.remove('show');
+  }
+
+  /* ── Toast ── */
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.style.opacity = '1';
+    t.style.transform = 'translateX(-50%) translateY(0)';
+    setTimeout(() => {
+      t.style.opacity = '0';
+      t.style.transform = 'translateX(-50%) translateY(20px)';
+    }, 2800);
+  }
+
+  function showConnectToast(name) {
+    showToast(`🔗 Connection request sent to ${name}!`);
+  }
+
+  /* ── Search ── */
+  document.getElementById('searchInput').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && this.value.trim()) {
+      showToast(`🔍 Searching for "${this.value.trim()}"...`);
+    }
+  });
+
+  /* ── Close modals on overlay click ── */
+  document.querySelectorAll('.modal-overlay').forEach(overlay => {
+    overlay.addEventListener('click', function(e) {
+      if (e.target === this) this.classList.remove('show');
+    });
+  });
+</script>
+</body>
+</html>
